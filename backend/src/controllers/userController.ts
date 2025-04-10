@@ -90,6 +90,72 @@ export const createUser=async (req:Request,res:Response):Promise<any>=>{
     }
 }
 
+
+//update user details
+export const updateUser=async(req:Request,res:Response):Promise<any>=>{
+    try{
+        //verify if the user is admin
+        //@ts-ignore
+        const currentUserRole=req.user?.role;
+        //@ts-ignore
+        if(currentUserRole!=='ADMIN'){
+            return res.status(403).json({message:"Not authorized as an admin"});
+        }
+        const userId=parseInt(req.params.id);
+        const {name,email,password,role}=req.body;
+
+        const user=await prisma.user.findUnique({
+            where:{id:userId}
+        });
+        if(!user){
+            return res.status(404).json({message:"User not found"});
+        }
+        if(email && email!==user.email){
+            const existingUser=await prisma.user.findUnique({
+                where:{email}
+            });
+            if(existingUser){
+                return res.status(400).json({message:"email already exists"});
+            }
+        }
+        if(role && !Object.values(Role).includes(role)){
+            return res.status(400).json({message:"Invalid role"});
+        }
+
+        //prepare the data to update
+        const updateData:any={};
+        if(name){updateData.name=name;}
+        if(email){updateData.email=email;}
+        if(role){updateData.role=role;}
+
+        //Hash the password
+        if(password){
+            const salt=await bcrypt.genSalt(10);
+            updateData.password=await bcrypt.hash(password,salt);
+        }
+
+        //update the user
+        const updateduser=await prisma.user.update({
+            where:{id:userId},
+            data:updateData,
+            select:{
+                id:true,
+                email:true,
+                name:true,
+                role:true,
+                createdAt:true,
+                updatedAt:true
+            }
+        });
+
+        res.status(200).json({message:'User updated successfully',user:updateduser});
+    }catch(err){
+        console.error('Error in updateUser:', err);
+        res.status(500).json({message:"Internal server error in updateUser"});
+    }
+} 
+
+
 export const getUserById=async(req:Request,res:Response):Promise<any>=>{
     try{
         //verify if the user is admin

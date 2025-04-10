@@ -50,3 +50,31 @@ export const logout=(req:Request,res:Response)=>{
     res.clearCookie('token');
     res.status(200).json({message:"Logout successful"});
 }
+
+
+export const getProfile=async(req:Request,res:Response):Promise<any>=>{
+    try{
+        //@ts-ignore
+        const userId=req.user.id;
+
+        const user=await prisma.user.findUnique({
+            where:{id:userId},
+            select:{
+                id:true,
+                email:true,
+                name:true,
+                role:true,
+                createdAt:true,
+                updatedAt:true
+            }
+        });
+
+        if(!user){
+            return res.status(404).json({message:"User not found"});
+        }
+        return res.status(200).json(user);
+    }catch(err){
+        console.error('Error in getProfile:', err);
+        res.status(500).json({message:"Internal server error"});
+    }
+}
