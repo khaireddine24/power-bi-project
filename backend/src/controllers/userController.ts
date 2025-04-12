@@ -1,6 +1,7 @@
 import { Request,Response } from "express";
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from 'bcrypt';
+import { sendAccountCreationEmail, sendAccountUpdateEmail } from "../services/emailService";
 
 const prisma =new PrismaClient();
 
@@ -46,16 +47,13 @@ export const createUser=async (req:Request,res:Response):Promise<any>=>{
         if(currentUserRole!=='ADMIN'){
             return res.status(403).json({message:"Not authorized as an admin"});
         }
-        const {name,email,password,role}=req.body;
+        const {name,email,password}=req.body;
         //Check if the user already exists
         const existingUser=await prisma.user.findUnique({
             where:{email}
         });
         if(existingUser){
             return res.status(400).json({message:"User already exists"});
-        }
-        if(role && !Object.values(Role).includes(role)){
-            return res.status(400).json({message:"Invalid role"});
         }
 
         //Hash the password
@@ -68,13 +66,16 @@ export const createUser=async (req:Request,res:Response):Promise<any>=>{
                 name,
                 email,
                 password:hashedPassword,
-                role:role as Role
+                role:"USER"
             }
         });
+
+        const emailSent=await sendAccountCreationEmail(name,email,password);
         res.status(201).json({
             message:"User created successfully",
             user:{
                 id:newUser.id,
+                emailSent:emailSent,
                 email:newUser.email,
                 name:newUser.name,
                 role:newUser.role,
@@ -102,10 +103,10 @@ export const updateUser=async(req:Request,res:Response):Promise<any>=>{
             return res.status(403).json({message:"Not authorized as an admin"});
         }
         const userId=parseInt(req.params.id);
-        const {name,email,password,role}=req.body;
+        const {name,email,password}=req.body;
 
         const user=await prisma.user.findUnique({
-            where:{id:userId}
+            where:{id:userId},
         });
         if(!user){
             return res.status(404).json({message:"User not found"});
@@ -118,20 +119,30 @@ export const updateUser=async(req:Request,res:Response):Promise<any>=>{
                 return res.status(400).json({message:"email already exists"});
             }
         }
-        if(role && !Object.values(Role).includes(role)){
-            return res.status(400).json({message:"Invalid role"});
-        }
 
         //prepare the data to update
         const updateData:any={};
-        if(name){updateData.name=name;}
-        if(email){updateData.email=email;}
-        if(role){updateData.role=role;}
+        const updatedFields:string[]=[];
+        const updatedValues:string[]=[];
+
+        if(name){
+            updateData.name=name;
+            updatedValues.push(name);
+            updatedFields.push('name');
+        }
+        if(email){
+            updateData.email=email;
+            updatedValues.push(email);
+            updatedFields.push('email');
+        }
+
 
         //Hash the password
         if(password){
             const salt=await bcrypt.genSalt(10);
             updateData.password=await bcrypt.hash(password,salt);
+            updatedValues.push(password);
+            updatedFields.push('password');
         }
 
         //update the user
@@ -147,6 +158,11 @@ export const updateUser=async(req:Request,res:Response):Promise<any>=>{
                 updatedAt:true
             }
         });
+        //send email to the user about the update
+        let emailSent=false;
+        if(updatedFields.length>0){
+            emailSent=await sendAccountUpdateEmail(user.name,user.email,updatedFields,updatedValues);
+        }
 
         res.status(200).json({message:'User updated successfully',user:updateduser});
     }catch(err){

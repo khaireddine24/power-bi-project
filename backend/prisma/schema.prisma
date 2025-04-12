@@ -19,6 +19,5 @@ model User {
 
 enum Role {
   ADMIN
-  BUYER
-  MANAGER
+  USER
 }
