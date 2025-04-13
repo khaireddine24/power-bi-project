@@ -2,6 +2,8 @@ import { Request,Response } from "express";
 import bcrypt from 'bcrypt';
 import { PrismaClient } from "@prisma/client";
 import { generateToken } from "../utils/jwt";
+import { generateOTP } from "../utils/otp";
+import { sendPasswordChangeConfirmation, sendPasswordResetOTP } from "../services/emailService";
 
 const prisma=new PrismaClient();
 
@@ -143,6 +145,125 @@ export const updateProfile=async(req:Request,res:Response):Promise<any>=>{
         
     }catch(err){
         console.error('Error in updateProfile:', err);
+        res.status(500).json({message:"Internal server error"});
+    }
+}
+
+export const requestPasswordReset=async(req:Request,res:Response):Promise<any>=>{
+    try{
+        const {email}=req.body;
+        if(!email){
+            return res.status(400).json({message:"Email is required"});
+        }
+        //Check if the user exists
+        const user=await prisma.user.findUnique({
+            where:{email}
+        });
+        if(!user){
+            return res.status(404).json({message:"User not found"});
+        }
+
+        const otp=generateOTP();
+        const expiresAt=new Date(Date.now()+15*60*1000); //Expires in 15 minutes
+        await prisma.passwordReset.updateMany({
+             where:{
+                userId:user.id,
+                used:false
+             },
+             data:{
+                used:true
+             }
+         });
+        await prisma.passwordReset.create({
+            data:{
+                userId:user.id,
+                email:user.email,
+                otp,
+                expiresAt
+            }
+        });
+
+        //Send OTP via email
+        await sendPasswordResetOTP(email,otp,user.name);
+
+        res.status(200).json({message:"if email exist,code reset are sended"});
+
+
+    }catch(err){
+        console.error("Error in Request Password Reset ,try again");
+        res.status(500).json({message:"Internal server error"});
+    }
+}
+
+//verify otp
+export const verifyOTP=async(req:Request,res:Response):Promise<any>=>{
+    try{
+        const {email,otp}=req.body;
+        if(!email || !otp){
+            return res.status(400).json({message:"Email and OTP are required"});
+        }
+
+        const passwordReset=await prisma.passwordReset.findFirst({
+            where:{
+                email,
+                otp,
+                used:false,
+                expiresAt:{
+                    gte:new Date()
+                }
+            }
+        });
+        if(!passwordReset){
+            return res.status(400).json({message:"Invalid OTP or expired"});
+        }
+        return res.status(200).json({message:"otp code valid",resetId:passwordReset.id});
+    }catch(err){
+        console.error("Error while verify otp");
+        res.status(500).json({message:"Internal Server Error"});
+    }
+}
+
+export const resetPassword=async(req:Request,res:Response):Promise<any>=>{
+    try{
+        const {resetId,newPassword}=req.body;
+        if(!resetId||!newPassword){
+            return res.status(400).json({message:"Reset ID and new password are required"});
+        }
+        const passwordReset=await prisma.passwordReset.findUnique({
+            where:{
+                id:resetId,
+                used:false,
+                expiresAt:{
+                    gt:new Date()
+                }
+            },
+            include:{
+                user:true
+            }
+        });
+        if(!passwordReset){
+            return res.status(404).json({message:"Invalid reset password or expire"});
+        }
+
+        //hash password part
+        const hashedPassword=await bcrypt.hash(newPassword,10);
+        await prisma.user.update({
+            where:{id:passwordReset.userId},
+            data:{password:hashedPassword}
+        });
+
+        await prisma.passwordReset.update({
+            where:{id:passwordReset.id},
+            data:{used:true}
+        });
+
+        //send Email
+        await sendPasswordChangeConfirmation(passwordReset.email,passwordReset.user.name)
+
+        res.status(200).json({message:"password reset with success"});
+
+    }catch(err){
+        console.error("Error in reset password ,try again");
         res.status(500).json({message:"Internal server error"});
     }
 }
