@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { adminUpdateUserSchema, AdminUpdateUserFormData } from '@/schemas/userSchemas';
-import { updateUser} from '@/services/api';
+import { updateUser } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -24,8 +24,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { EditUserDialogProps } from '@/types/user.types';
 
-
-
 const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -33,18 +31,27 @@ const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogPr
   const form = useForm<AdminUpdateUserFormData>({
     resolver: zodResolver(adminUpdateUserSchema),
     defaultValues: {
-      name: user.name || '',
-      email: user.email,
-      password: '',
+      name: user?.name || '',
+      email: user?.email || '',
     },
   });
 
+  // Reset form values when user changes
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name || '',
+        email: user.email,
+      });
+    }
+  }, [user, form]);
+
   const handleSubmit = async (data: AdminUpdateUserFormData) => {
     // Remove empty fields
-    const updateData: AdminUpdateUserFormData = {};
+    const updateData: Partial<AdminUpdateUserFormData> = {};
     if (data.name && data.name !== user.name) updateData.name = data.name;
     if (data.email && data.email !== user.email) updateData.email = data.email;
-    if (data.password) updateData.password = data.password;
+
 
     // Check if there are any changes
     if (Object.keys(updateData).length === 0) {
@@ -59,7 +66,12 @@ const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogPr
     setIsSubmitting(true);
     try {
       await updateUser(user.id, updateData);
+      toast({
+        title: 'Success',
+        description: 'User updated successfully',
+      });
       onUserUpdated();
+      onClose();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast({
@@ -76,7 +88,7 @@ const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogPr
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit User: {user.name || user.email}</DialogTitle>
+          <DialogTitle>Edit User: {user?.name || user?.email}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -112,7 +124,7 @@ const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogPr
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="button" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -20,6 +20,7 @@ interface AuthContextType extends AuthState {
     currentPassword?: string;
     newPassword?: string;
   }) => Promise<User>;
+  refetchUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading: false,
         error: null,
       });
-      return user; // Return the user object so we can access role information
+      return user;
     } catch (error: any) {
       setAuthState(prev => ({
         ...prev,
@@ -115,9 +116,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
   };
+  const refetchUser = async () => {
+    await getCurrentUser();
+  };
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, updateProfile,refetchUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { updateUserProfile } from "@/services/api";
 import { useForm } from "react-hook-form";
@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ProfileSettings = () => {
-  const { user } = useAuth();
+  const { user, refetchUser } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,6 +35,19 @@ const ProfileSettings = () => {
     },
   });
 
+  // Reset form when user data changes
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name || "",
+        email: user.email || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmNewPassword: ""
+      });
+    }
+  }, [user, form]);
+
   const onSubmit = async (data: UpdateProfileFormData) => {
     try {
       setIsLoading(true);
@@ -45,6 +58,7 @@ const ProfileSettings = () => {
         currentPassword?: string;
         newPassword?: string;
       } = {};
+      
       if (data.name && data.name !== user?.name) {
         updateData.name = data.name;
       }
@@ -61,13 +75,15 @@ const ProfileSettings = () => {
       if (Object.keys(updateData).length > 0) {
         await updateUserProfile(updateData);
         
-        form.reset({
-          name: data.name,
-          email: data.email,
-          currentPassword: "",
-          newPassword: "",
-          confirmNewPassword: ""
-        });
+        // Reset password fields
+        form.setValue("currentPassword", "");
+        form.setValue("newPassword", "");
+        form.setValue("confirmNewPassword", "");
+        
+        // Refresh user data after update
+        if (refetchUser) {
+          await refetchUser();
+        }
         
         toast({
           title: "Profile updated",
