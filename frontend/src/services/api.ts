@@ -59,3 +59,36 @@ export const requestPasswordReset = async (email: ForgotPasswordFormData) => {
     return response.data;
   };
 
+  export const getAllUsers = async () => {
+    const response = await api.get('/users/get-all-users');
+    return response.data;
+  };
+  
+  export const getUserById = async (id: number) => {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  };
+  
+  export const createUser = async (userData: {
+    name: string;
+    email: string;
+    password: string;
+  }) => {
+    const response = await api.post('/users/create-user', userData);
+    return response.data;
+  };
+  
+  export const updateUser = async (id: number, userData: {
+    name?: string;
+    email?: string;
+    password?: string;
+  }) => {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  };
+  
+  export const deleteUser = async (id: number) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  };
+

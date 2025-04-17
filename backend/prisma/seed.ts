@@ -6,7 +6,6 @@ dotenv.config();
 const prisma=new PrismaClient();
 
 async function main(){
-    //verify if the user already exists (Role is Admin)
     const adminExists=await prisma.user.findFirst({
         where:{
             role:'ADMIN'

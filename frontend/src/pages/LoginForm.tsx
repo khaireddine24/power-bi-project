@@ -19,9 +19,20 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data);
-    if (!error) {
-      navigate('/dashboard'); 
+    try {
+      const user = await login(data);
+      if (user) {
+        // Navigate based on user role
+        if (user.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/');  // Regular user dashboard
+        }
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      // Error is already handled in the AuthContext
+      console.error("Login failed");
     }
   };
 
