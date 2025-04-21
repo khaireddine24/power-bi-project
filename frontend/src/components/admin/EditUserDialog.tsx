@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { adminUpdateUserSchema, AdminUpdateUserFormData } from '@/schemas/userSchemas';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserCog } from 'lucide-react';
 import { EditUserDialogProps } from '@/types/user.types';
 
 const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogProps) => {
@@ -36,7 +37,6 @@ const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogPr
     },
   });
 
-  // Reset form values when user changes
   useEffect(() => {
     if (user) {
       form.reset({
@@ -47,13 +47,10 @@ const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogPr
   }, [user, form]);
 
   const handleSubmit = async (data: AdminUpdateUserFormData) => {
-    // Remove empty fields
     const updateData: Partial<AdminUpdateUserFormData> = {};
     if (data.name && data.name !== user.name) updateData.name = data.name;
     if (data.email && data.email !== user.email) updateData.email = data.email;
 
-
-    // Check if there are any changes
     if (Object.keys(updateData).length === 0) {
       toast({
         title: 'Info',
@@ -84,57 +81,114 @@ const EditUserDialog = ({ open, onClose, user, onUserUpdated }: EditUserDialogPr
     }
   };
 
+  const formItemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: (i: number) => ({ 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        delay: i * 0.1,
+        duration: 0.3 
+      } 
+    })
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit User: {user?.name || user?.email}</DialogTitle>
+        <DialogHeader className="mb-6">
+          <div className="flex items-center gap-2">
+            <UserCog className="h-5 w-5 text-blue-500" />
+            <DialogTitle className="text-lg font-medium">
+              Edit User: {user?.name || user?.email}
+            </DialogTitle>
+          </div>
         </DialogHeader>
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  'Update User'
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+            <motion.div
+              custom={0}
+              variants={formItemVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter name" 
+                        {...field} 
+                        className="h-10"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
-            </DialogFooter>
+              />
+            </motion.div>
+            
+            <motion.div
+              custom={1}
+              variants={formItemVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="Enter email" 
+                        {...field}
+                        className="h-10" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </motion.div>
+            
+            <motion.div
+              custom={2}
+              variants={formItemVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <DialogFooter className="mt-6 flex gap-3 pt-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update User'
+                  )}
+                </Button>
+              </DialogFooter>
+            </motion.div>
           </form>
         </Form>
       </DialogContent>
