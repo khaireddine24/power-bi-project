@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,9 +13,15 @@ import { User, LogOut, Settings } from "lucide-react";
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
-
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
   const handleLogout = async () => {
     await logout();
+  };
+
+  const isActive = (path:string) => {
+    return currentPath === path;
   };
 
   return (
@@ -25,23 +31,39 @@ const Navbar = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link to="/" className="text-xl font-bold text-blue-600">
-                Yazaki automative
+                <img src="/logo-yazaki.jpg" alt="Logo" className="h-8 w-auto mt-3" />
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {isAuthenticated && user?.role==="USER" && (
+              {isAuthenticated && user?.role === "USER" && (
+                <Link
+                  to="/home"
+                  className={`${
+                    isActive("/home") 
+                      ? "border-blue-500 text-gray-900"
+                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Home
+                </Link>
+              )}
+              {isAuthenticated && user?.role === "USER" && (
                 <Link
                   to="/dashboard"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  className={`${
+                    isActive("/dashboard") 
+                      ? "border-blue-500 text-gray-900"
+                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                 >
                   Dashboard
                 </Link>
               )}
-              {/* Add more navigation links as needed */}
             </div>
           </div>
 
           <div className="flex items-center">
+            
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

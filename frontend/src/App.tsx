@@ -10,6 +10,7 @@ import ProfileSettings from "./pages/ProfileSettings";
 import AdminLayout from "./pages/AdminLayout";
 import UserManagementPage from "./pages/UserManagementPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Home from "./pages/Home";
 
 function App() {
   return (
@@ -21,6 +22,17 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-otp" element={<OtpVerification />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/home" element={
+            <DashboardLayout>
+              <Home />
+            </DashboardLayout>
+            } 
+          />
+          <Route path="/dashboard" element={ 
+            <DashboardLayout>
+                <Dashboard />
+              </DashboardLayout>} 
+          />
           
           {/* User routes */}
           <Route path="/" element={
