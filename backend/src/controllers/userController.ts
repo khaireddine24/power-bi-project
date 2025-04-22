@@ -221,14 +221,16 @@ export const deleteUser=async(req:Request,res:Response):Promise<any>=>{
             return res.status(404).json({message:"User not found"});
         }
 
-        //@ts-ignore
-        if(userId===req.user?.id){
-            return res.status(400).json({message:"You cannot delete your own account"});
-        }
-
+        await prisma.passwordReset.deleteMany({
+            where:{
+                userId:userId
+            }
+        });
+        
         const userDetail=await prisma.user.delete({
             where:{id:userId}
         });
+
         res.status(200).json({
             message:"User deleted successfully",
             name:userDetail.name

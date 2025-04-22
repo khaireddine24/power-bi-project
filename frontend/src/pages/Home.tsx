@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, ArrowRight } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 
 const Home = () => {
@@ -20,21 +20,19 @@ const Home = () => {
   const servicesRef = useRef(null);
   const servicesInView = useInView(servicesRef, { once: true, amount: 0.2 });
   
-  // Controls for animations
-  
   const carouselImages = [
     {
-      url: "/api/placeholder/1200/600",
+      url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8c0eTA3Kg0vALHni-Ao4I9Pa4dlpgKqYbUQ&s",
       title: "Innovation in Automotive Solutions",
       description: "Leading the industry with cutting-edge automotive technology"
     },
     {
-      url: "/api/placeholder/1200/600",
+      url: "https://www.yazaki-group.com/image/overseas.jpg",
       title: "Global Services Network",
       description: "Providing world-class service and support around the globe"
     },
     {
-      url: "/api/placeholder/1200/600",
+      url: "https://www.yazaki-group.com/image/policy.jpg",
       title: "Sustainable Business Practices",
       description: "Committed to environmental responsibility and sustainable growth"
     }
@@ -185,9 +183,11 @@ const Home = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6, duration: 0.4 }}
               >
-                <Button className="mt-8 bg-blue-600 hover:bg-blue-700">
-                  Learn More
-                </Button>
+                <Link to={'https://www.yazaki-group.com/global/'} target="_blank">
+                  <Button className="mt-8 bg-blue-600 hover:bg-blue-700">
+                    Learn More
+                  </Button>
+                </Link>
               </motion.div>
             </div>
           </motion.div>
@@ -282,9 +282,6 @@ const Home = () => {
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{service.title}</h3>
                 <p className="text-gray-600 flex-grow">{service.description}</p>
                 <motion.div whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
-                  <Link to={`#`} className="mt-4 inline-flex items-center text-blue-600 hover:text-blue-800">
-                    Learn more <ArrowRight size={16} className="ml-1" />
-                  </Link>
                 </motion.div>
               </motion.div>
             ))}
@@ -346,9 +343,11 @@ const Home = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Explore Analytics Solutions
-                </Button>
+                <Link to={'https://www.yazaki-group.com/global/'} target="_blank">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    Explore Analytics Solutions
+                  </Button>
+                </Link>
               </motion.div>
             </motion.div>
             <motion.div 
@@ -359,7 +358,7 @@ const Home = () => {
               transition={{ duration: 0.8 }}
             >
               <motion.img 
-                src="/api/placeholder/600/400" 
+                src="/13333499_7332.svg" 
                 alt="Data Analytics Dashboard" 
                 className="rounded-lg shadow-lg"
                 whileHover={{ scale: 1.03 }}
@@ -424,9 +423,11 @@ const Home = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Discover Financial Solutions
-                </Button>
+                <Link to={'https://careers.yazaki.com/go/Finance-&-Legal/8550000/'} target="_blank">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    Discover Financial Solutions
+                  </Button>
+                </Link>
               </motion.div>
             </motion.div>
             <motion.div 
@@ -437,7 +438,7 @@ const Home = () => {
               transition={{ duration: 0.8 }}
             >
               <motion.img 
-                src="/api/placeholder/600/400" 
+                src="/10601794_42061.svg" 
                 alt="Financial Management Dashboard" 
                 className="rounded-lg shadow-lg"
                 whileHover={{ scale: 1.03 }}
@@ -519,14 +520,6 @@ const Home = () => {
                 >
                   {item.description}
                 </motion.p>
-                <motion.div 
-                  whileHover={{ x: 5 }} 
-                  transition={{ duration: 0.2 }}
-                >
-                  <Link to="#" className="text-blue-600 hover:text-blue-800 inline-flex items-center">
-                    Learn more <ArrowRight size={16} className="ml-1" />
-                  </Link>
-                </motion.div>
               </motion.div>
             ))}
           </motion.div>
@@ -569,9 +562,11 @@ const Home = () => {
             whileTap={{ scale: 0.95 }}
             viewport={{ once: true }}
           >
-            <Button className="bg-white text-blue-700 hover:bg-gray-100 text-lg px-8 py-6">
-              Schedule a Demo
-            </Button>
+            <Link to={'https://www.yazaki-group.com/global/'} target="_blank">
+              <Button className="bg-white text-blue-700 hover:bg-gray-100 text-lg px-8 py-6">
+                Schedule a Demo
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </motion.section>
