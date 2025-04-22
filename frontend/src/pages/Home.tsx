@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   
   const dataAnalyticsRef = useRef(null);
   const dataAnalyticsInView = useInView(dataAnalyticsRef, { once: true, amount: 0.2 });
@@ -20,18 +22,27 @@ const Home = () => {
   const servicesRef = useRef(null);
   const servicesInView = useInView(servicesRef, { once: true, amount: 0.2 });
   
-  const carouselImages = [
+  const carouselItems = [
     {
+      type: "video",
+      url: "/Welcome_To_Yazaki.mp4",
+      title: "",
+      description: ""
+    },
+    {
+      type: "image",
       url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8c0eTA3Kg0vALHni-Ao4I9Pa4dlpgKqYbUQ&s",
       title: "Innovation in Automotive Solutions",
       description: "Leading the industry with cutting-edge automotive technology"
     },
     {
+      type: "image",
       url: "https://www.yazaki-group.com/image/overseas.jpg",
       title: "Global Services Network",
       description: "Providing world-class service and support around the globe"
     },
     {
+      type: "image",
       url: "https://www.yazaki-group.com/image/policy.jpg",
       title: "Sustainable Business Practices",
       description: "Committed to environmental responsibility and sustainable growth"
@@ -61,35 +72,64 @@ const Home = () => {
     }
   ];
 
-  // Auto-advance carousel
   useEffect(() => {
     let interval: string | number | NodeJS.Timeout | undefined;
-    if (isAutoplay) {
+    
+    if (isAutoplay && (carouselItems[currentSlide].type !== "video" || 
+        (videoRef.current && videoRef.current.paused))) {
       interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev === carouselImages.length - 1 ? 0 : prev + 1));
+        setCurrentSlide((prev) => (prev === carouselItems.length - 1 ? 0 : prev + 1));
       }, 5000);
     }
+    
     return () => clearInterval(interval);
-  }, [carouselImages.length, isAutoplay]);
+  }, [carouselItems.length, isAutoplay, currentSlide]);
 
-  // Pause autoplay when user interacts with carousel
+  // Handle video events
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    
+    if (videoElement) {
+      const handlePlay = () => {
+        setIsAutoplay(false);
+      };
+      
+      const handlePause = () => {
+        setIsAutoplay(true);
+      };
+      
+      const handleEnded = () => {
+        setIsAutoplay(true);
+        nextSlide();
+      };
+      
+      videoElement.addEventListener("play", handlePlay);
+      videoElement.addEventListener("pause", handlePause);
+      videoElement.addEventListener("ended", handleEnded);
+      
+      return () => {
+        videoElement.removeEventListener("play", handlePlay);
+        videoElement.removeEventListener("pause", handlePause);
+        videoElement.removeEventListener("ended", handleEnded);
+      };
+    }
+  }, [currentSlide]);
+
   const pauseAutoplay = () => {
     setIsAutoplay(false);
-    // Resume after 10 seconds of inactivity
     setTimeout(() => setIsAutoplay(true), 10000);
   };
 
   const nextSlide = () => {
     pauseAutoplay();
-    setCurrentSlide((prev) => (prev === carouselImages.length - 1 ? 0 : prev + 1));
+    setCurrentSlide((prev) => (prev === carouselItems.length - 1 ? 0 : prev + 1));
   };
 
   const prevSlide = () => {
     pauseAutoplay();
-    setCurrentSlide((prev) => (prev === 0 ? carouselImages.length - 1 : prev - 1));
+    setCurrentSlide((prev) => (prev === 0 ? carouselItems.length - 1 : prev - 1));
   };
 
-  // Animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
@@ -128,14 +168,88 @@ const Home = () => {
     })
   };
 
-  // Track slide direction for animations
   const [[page, direction], setPage] = useState([0, 0]);
-
-  // Update page and direction when slide changes
   useEffect(() => {
     const dir = page < currentSlide ? 1 : -1;
     setPage([currentSlide, dir]);
   }, [currentSlide]);
+
+  //@ts-ignore
+  const renderSlideContent = (slide, index) => {
+    if (slide.type === "video") {
+      return (
+        <div className="absolute inset-0 flex flex-col justify-center items-center">
+          <video 
+            ref={videoRef}
+            src={slide.url}
+            className="absolute inset-0 w-full h-full object-cover"
+            loop
+            autoPlay={index === currentSlide}
+            muted={true}
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-center text-white p-4">
+            <motion.h1 
+              className="text-4xl md:text-6xl font-bold mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              {slide.title}
+            </motion.h1>
+            <motion.p 
+              className="text-xl md:text-2xl max-w-3xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              {slide.description}
+            </motion.p>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div 
+          className="absolute inset-0" 
+          style={{
+            backgroundImage: `url(${slide.url})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center"
+          }}
+        >
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center text-center text-white p-4">
+            <motion.h1 
+              className="text-4xl md:text-6xl font-bold mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              {slide.title}
+            </motion.h1>
+            <motion.p 
+              className="text-xl md:text-2xl max-w-3xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              {slide.description}
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+            >
+              <Link to={'https://www.yazaki-group.com/global/'} target="_blank">
+                <Button className="mt-8 bg-blue-600 hover:bg-blue-700">
+                  Learn More
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      );
+    }
+  };
 
   return (
     <motion.div 
@@ -155,47 +269,14 @@ const Home = () => {
             animate="center"
             exit="exit"
             className="absolute top-0 left-0 w-full h-full"
-            style={{
-              backgroundImage: `url(${carouselImages[currentSlide].url})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center"
-            }}
           >
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center text-center text-white p-4">
-              <motion.h1 
-                className="text-4xl md:text-6xl font-bold mb-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                {carouselImages[currentSlide].title}
-              </motion.h1>
-              <motion.p 
-                className="text-xl md:text-2xl max-w-3xl"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-              >
-                {carouselImages[currentSlide].description}
-              </motion.p>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6, duration: 0.4 }}
-              >
-                <Link to={'https://www.yazaki-group.com/global/'} target="_blank">
-                  <Button className="mt-8 bg-blue-600 hover:bg-blue-700">
-                    Learn More
-                  </Button>
-                </Link>
-              </motion.div>
-            </div>
+            {renderSlideContent(carouselItems[currentSlide], currentSlide)}
           </motion.div>
         </AnimatePresence>
         
         <motion.button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2"
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 z-10"
           aria-label="Previous slide"
           whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.8)" }}
           whileTap={{ scale: 0.95 }}
@@ -204,7 +285,7 @@ const Home = () => {
         </motion.button>
         <motion.button
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2"
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 z-10"
           aria-label="Next slide"
           whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.8)" }}
           whileTap={{ scale: 0.95 }}
@@ -212,8 +293,8 @@ const Home = () => {
           <ChevronRight size={24} />
         </motion.button>
         
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-          {carouselImages.map((_, index) => (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+          {carouselItems.map((_, index) => (
             <motion.button
               key={index}
               onClick={() => {
